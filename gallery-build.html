@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitmap Gallery Builder V1.1</title>
+    <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCBmaWxsPSIjMkMyQzJDIiB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjE1Ii8+PHJlY3QgZmlsbD0iI0Y3OTMxQSIgeD0iMjAiIHk9IjIwIiB3aWR0aD0iMjUiIGhlaWdodD0iMjUiIHJ4PSI1Ii8+PHJlY3QgZmlsbD0iI0Y3OTMxQSIgeD0iNTUiIHk9IjIwIiB3aWR0aD0iMjUiIGhlaWdodD0iMjUiIHJ4PSI1Ii8+PHJlY3QgZmlsbD0iI0Y3OTMxQSIgeD0iMjAiIHk9IjU1IiB3aWR0aD0iMjUiIGhlaWdodD0iMjUiIHJ4PSI1Ii8+PHJlY3QgZmlsbD0iI0Y3OTMxQSIgeD0iNTUiIHk9IjU1IiB3aWR0aD0iMjUiIGhlaWdodD0iMjUiIHJ4PSI1Ii8+PC9zdmc+">
+    <script src="https://unpkg.com/konva@9.3.13/konva.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --bitcoin-orange: #F7931A; 
+            --panel-bg: #2C2C2C; 
+            --dark-bg: #212121;
+            --text-light: #e0e0e0;
+            --text-medium: #aaa; 
+            --border-color: #444; 
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--dark-bg); color: var(--text-light); display: flex; align-items: flex-start; padding: 20px; gap: 20px; }
+        h1, h2, h3, h4 { font-family: 'Playfair Display', serif; color: var(--bitcoin-orange); margin-top: 0; }
+        a { color: var(--bitcoin-orange); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .container { display: flex; gap: 20px; width: 100%; max-width: 1600px; margin: auto; }
+        .canvas-section { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+        #canvas-container { background: #faf9f6; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.6); cursor: grab; }
+        .canvas-info { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: var(--text-medium); font-size: 0.9em; }
+        .control-panel { width: 350px; background: var(--panel-bg); border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 20px; max-height: calc(100vh - 40px); }
+        .scrollable-panel { overflow-y: auto; display: flex; flex-direction: column; gap: 20px; padding-right: 10px; }
+        .properties-panel { width: 400px; }
+        .properties-panel.disabled { opacity: 0.5; pointer-events: none; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: background-color 0.2s; font-size: 1em; }
+        .btn:disabled { background: #555; cursor: not-allowed; }
+        .btn-primary { background: var(--bitcoin-orange); color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-info { background: #17a2b8; color: white; }
+        .btn-group { display: flex; gap: 10px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group.checkbox-group { display: flex; align-items: center; gap: 10px; }
+        .form-group.checkbox-group label { margin-bottom: 0; }
+        .form-group.checkbox-group input { width: auto; height: auto; }
+        label { display: block; margin-bottom: 5px; color: var(--text-medium); font-weight: 500; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--dark-bg); color: var(--text-light); font-size: 14px; }
+        .color-input-group { display: flex; gap: 10px; align-items: center; }
+        .color-input-group input[type="color"] { padding: 0; height: 40px; width: 60px; flex-shrink: 0; border: none; background: none; }
+        .color-input-group input[type="text"] { flex-grow: 1; }
+        .input-group { display: flex; gap: 5px; }
+        .input-group input { flex: 1; }
+        .input-group button { width: auto; padding: 10px; font-size: 0.9em; }
+        .shortcuts { background: rgba(247,147,26,0.1); border: 1px solid var(--bitcoin-orange); padding: 12px; border-radius: 4px; font-size: 0.9rem; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; flex-shrink: 0; }
+        .shortcuts b { font-family: inherit; }
+        #prop-tabs { display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 15px; }
+        #prop-tabs button { background: none; border: none; color: var(--text-medium); padding: 10px 15px; cursor: pointer; font-size: 1em; border-bottom: 3px solid transparent; font-family: 'Inter', sans-serif; font-weight: bold; }
+        #prop-tabs button.active { color: var(--bitcoin-orange); border-bottom-color: var(--bitcoin-orange); }
+        .tab-content, .prop-section { display: none; }
+        .tab-content.active, .prop-section.active { display: block; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); align-items: center; justify-content: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: var(--panel-bg); color: var(--text-light); padding: 30px; border-radius: 8px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; position: relative; }
+        .modal-close { position: absolute; top: 15px; right: 15px; font-size: 30px; color: var(--text-medium); cursor: pointer; line-height: 1; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="canvas-section">
+            <h1 style="font-size: 2rem; margin-bottom: 0;">🎨 Bitmap Gallery Builder</h1>
+            <p class="canvas-info">Double-click a block to preview, scroll to zoom, drag to pan, double-click background to reset.</p>
+            <div id="canvas-container"></div>
+        </div>
+        
+        <div class="control-panel">
+            <div class="scrollable-panel">
+                <div>
+                    <h3>🎯 Main Controls</h3>
+                    <div class="form-group">
+                        <label for="gallery-title">Page Title</label>
+                        <input type="text" id="gallery-title" value="My .bitmap Gallery">
+                    </div>
+                     <div class="form-group">
+                        <label for="canvas-bg-color">Canvas Background</label>
+                        <div class="color-input-group">
+                            <input type="color" id="canvas-bg-color" value="#faf9f6">
+                            <input type="text" id="canvas-bg-hex" value="#faf9f6">
+                        </div>
+                        <button id="canvas-bg-transparent" class="btn btn-secondary" style="flex: 1; margin-top: 5px;">Transparent</button>
+                    </div>
+                    <button id="add-block-btn" class="btn btn-primary" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 2a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2zm5 0a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V2zm5 0a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1V2zM1 7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V7zm5 0a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7zm5 0a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1V7zM1 12a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1v-2zm5 0a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1v-2zm5 0a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-2z"/></svg>
+                        <span>Add Block</span>
+                    </button>
+                    <div class="btn-group" style="margin-top:10px;">
+                        <button id="add-text-btn" class="btn btn-secondary">T+ Add Text</button>
+                        <button id="doodle-btn" class="btn btn-secondary">✏️ Doodle</button>
+                    </div>
+                </div>
+                <div>
+                    <h3>💾 Progress</h3>
+                    <button id="save-cache-btn" class="btn btn-primary" style="margin-bottom: 10px;">Save to Local Cache</button>
+                    <div class="btn-group">
+                         <button id="import-draft-btn" class="btn btn-info">Import Draft</button>
+                         <button id="export-draft-btn" class="btn btn-info">Export Draft</button>
+                    </div>
+                </div>
+                 <div>
+                    <h3>🚀 Export</h3>
+                    <button id="export-btn" class="btn btn-success">📁 Export as .zip</button>
+                    <button id="clear-btn" class="btn btn-danger" style="margin-top:10px;">🗑️ Clear Canvas</button>
+                </div>
+                <div class="shortcuts">
+                    <h4 style="margin-bottom: 5px;">Shortcuts</h4>
+                    <div><b>Delete:</b> Remove selected item</div>
+                    <div><b>Ctrl+Z:</b> Undo last action</div>
+                    <div><b>Esc:</b> Deselect / Close preview</div>
+                    <div><b>Mouse Wheel:</b> Zoom canvas</div>
+                </div>
+                <div class="shortcuts">
+                    <h4 style="margin-bottom: 10px;">Showcase Gallery</h4>
+                    <p style="font-size: 0.95em; line-height: 1.4;">
+                        <a href="https://bitmap-gallery-demo.netlify.app/" target="_blank" rel="noopener noreferrer">https://bitmap-linktree-demo.netlify.app/</a>
+                        <br><br>
+                        Show your gallery and tag <a href="https://x.com/Evan_XYZ_" target="_blank" rel="noopener noreferrer">@Evan_XYZ_</a> on X and I will pick it in.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="control-panel properties-panel disabled" id="properties-panel">
+            <h3 id="prop-panel-title">Properties</h3>
+            <div class="prop-section" id="prop-block">
+                <div id="prop-tabs"><button class="tab-btn active" data-tab="content">Contents</button><button class="tab-btn" data-tab="decoration">Decoration</button></div>
+                <div id="tab-content-content" class="tab-content active">
+                    <div class="form-group"><label for="prop-title">Block Title</label><input type="text" id="prop-title"></div>
+                    <div class="form-group"><label for="prop-desc">Block Description</label><textarea id="prop-desc"></textarea></div>
+                    <h4>Content Items</h4><div id="content-list" style="max-height: 200px; overflow-y: auto; padding-right: 5px;"></div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px;">
+                        <button class="btn btn-secondary btn-small" onclick="addContentItem('image')">+ Image</button>
+                        <button class="btn btn-secondary btn-small" onclick="addContentItem('video')">+ Video</button>
+                        <button class="btn btn-secondary btn-small" onclick="addContentItem('text')">+ Text</button>
+                        <button class="btn btn-secondary btn-small" onclick="addContentItem('link')">+ Link</button>
+                        <button class="btn btn-secondary btn-small" onclick="addContentItem('youtube')">+ YouTube</button>
+                        <button class="btn btn-secondary btn-small" onclick="addContentItem('x')">+ X (Twitter)</button>
+                    </div>
+                </div>
+                <div id="tab-content-decoration" class="tab-content">
+                    <h4>Overlay Image</h4>
+                    <label for="deco-image-upload" class="btn btn-secondary" style="margin-bottom:10px; text-align:center;">Upload From Computer</label>
+                    <input type="file" id="deco-image-upload" accept="image/*" style="display:none;">
+                     <div class="form-group">
+                        <label for="deco-image-url">Or Paste Image URL</label>
+                        <input type="text" id="deco-image-url" placeholder="https://example.com/image.png">
+                    </div>
+                    <hr style="border-color: var(--border-color); margin: 15px 0;">
+                    <div class="form-group"><label>Opacity: <span id="deco-opacity-val">100%</span></label><input type="range" id="deco-opacity-slider" min="0" max="1" step="0.01" value="1"></div>
+                    <div class="form-group"><label>Scale: <span id="deco-scale-val">100%</span></label><input type="range" id="deco-scale-slider" min="0.1" max="1" step="0.01" value="1"></div>
+                    <div class="form-group"><label>Corner Radius: <span id="deco-corners-val">0px</span></label><input type="range" id="deco-corners-slider" min="0" max="200" step="1" value="0"></div>
+                </div>
+            </div>
+            <div class="prop-section" id="prop-text">
+                <div class="form-group"><label for="text-content">Text</label><textarea id="text-content" rows="3"></textarea></div>
+                <div class="form-group"><label for="text-size">Font Size</label><input type="number" id="text-size" value="24" min="8"></div>
+                <div class="form-group"><label for="text-color">Color</label>
+                    <div class="color-input-group">
+                        <input type="color" id="text-color" value="#FFFFFF">
+                        <input type="text" id="text-color-hex" value="#FFFFFF">
+                    </div>
+                </div>
+            </div>
+            <div class="prop-section" id="prop-doodle"><p>This is a doodle. You can move, resize, rotate, and delete it.</p></div>
+            <button id="delete-btn" class="btn btn-danger" style="margin-top: auto;">🗑️ Delete Selected</button>
+        </div>
+    </div>
+    
+    <div id="preview-modal" class="modal"><div class="modal-content"><span class="modal-close" id="modal-close-btn">×</span><div id="modal-body"></div></div></div>
+
+<script>
+// --- CONFIG, STATE & SETUP ---
+const CANVAS_SIZE = 800;
+let stage, layer, transformer, selectedNode;
+let blockCounter = 0, textCounter = 0, doodleCounter = 0;
+let history = [], historyIndex = -1;
+let isDoodling = false, currentDoodle;
+const DEFAULT_BLOCK_SRC = 'https://img-cdn.magiceden.dev/rs:fit:800:0:0/plain/https%3A%2F%2Fbitmap-img.magiceden.dev%2Fv1%2Ff89510851210085c0a728b0941a8fc5e4384e7e24e1a964ae0cc3d02044371d0i0';
+
+// --- INITIALIZATION & CORE LOGIC ---
+window.addEventListener('load', () => {
+    stage = new Konva.Stage({ container: 'canvas-container', width: CANVAS_SIZE, height: CANVAS_SIZE, draggable: true });
+    layer = new Konva.Layer();
+    stage.add(layer);
+    transformer = new Konva.Transformer({ borderStroke: '#F7931A', anchorStroke: '#F7931A', rotateEnabled: true, anchorSize: 10 });
+    layer.add(transformer);
+    initEventListeners();
+    loadFromLocalStorage();
+});
+
+
+// --- FINAL STATE RESTORATION LOGIC (Two-Phase Architecture) ---
+
+/**
+ * PHASE 1: ASSET LOADING
+ * Scans the entire state object to find all image URLs, pre-loads them, 
+ * and returns a map of URL -> loaded ImageElement.
+ */
+async function hydrateStateWithAssets(stateNode) {
+    const imageUrls = new Set();
+    
+    function findImageUrls(obj) {
+        if (!obj) return;
+        if (obj.className === 'Image' && obj.attrs.src) imageUrls.add(obj.attrs.src);
+        if (obj.attrs?.userData?.decoration?.overlay?.src) imageUrls.add(obj.attrs.userData.decoration.overlay.src);
+        if (obj.children) obj.children.forEach(findImageUrls);
+    }
+
+    findImageUrls(stateNode);
+
+    if (imageUrls.size === 0) return new Map();
+
+    const assetMap = new Map();
+    const promises = Array.from(imageUrls).map(url => {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.crossOrigin = 'Anonymous';
+            img.onload = () => { assetMap.set(url, img); resolve(); };
+            img.onerror = () => reject(new Error(`Failed to load asset: ${url}`));
+            img.src = url;
+        });
+    });
+
+    await Promise.all(promises);
+    return assetMap;
+}
+
+/**
+ * PHASE 2: SYNCHRONOUS CREATION
+ * The main restoration function. It uses the pre-loaded assets to build the canvas.
+ */
+async function restoreState(state, isHistoryNavigation = false) {
+    if (!state || !state.nodes) throw new Error("Invalid state object provided.");
+    
+    const stateCopy = JSON.parse(JSON.stringify(state));
+    
+    if (layer) layer.destroy();
+    layer = new Konva.Layer();
+    stage.add(layer);
+
+    try {
+        const assetMap = await hydrateStateWithAssets(stateCopy.nodes);
+        
+        const { counters, canvasBg, galleryTitle } = stateCopy;
+        blockCounter = counters?.blockCounter || 0;
+        textCounter = counters?.textCounter || 0;
+        doodleCounter = counters?.doodleCounter || 0;
+        const bgColor = canvasBg || '#faf9f6';
+        stage.container().style.backgroundColor = bgColor;
+        document.getElementById('canvas-bg-color').value = bgColor === 'transparent' ? '#ffffff' : bgColor;
+        document.getElementById('canvas-bg-hex').value = bgColor;
+        document.getElementById('gallery-title').value = galleryTitle || 'My .bitmap Gallery';
+
+        function applyAssetsToNode(nodeObj) {
+            if (!nodeObj) return;
+            if (nodeObj.className === 'Image' && nodeObj.attrs.src && assetMap.has(nodeObj.attrs.src)) {
+                nodeObj.attrs.image = assetMap.get(nodeObj.attrs.src);
+                delete nodeObj.attrs.src;
+            }
+            if (nodeObj.children) nodeObj.children.forEach(applyAssetsToNode);
+        }
+        
+        const nodeObjects = stateCopy.nodes.children.filter(child => child.className !== 'Transformer');
+        for (const nodeObj of nodeObjects) {
+            applyAssetsToNode(nodeObj);
+            const node = Konva.Node.create(nodeObj);
+            layer.add(node);
+        }
+        
+        transformer.destroy();
+        transformer = new Konva.Transformer({ borderStroke: '#F7931A', anchorStroke: '#F7931A', rotateEnabled: true, anchorSize: 10 });
+        layer.add(transformer);
+        transformer.on('transformend', saveState);
+
+        layer.find('Group, Text, Line').forEach(node => {
+            if (node.draggable()) node.on('dragend', saveState);
+            if (node.name() === 'block') {
+                const decoSrc = node.getAttr('userData')?.decoration?.overlay?.src;
+                renderDecorations(node, assetMap.get(decoSrc));
+            }
+        });
+        
+        layer.batchDraw();
+        if (!isHistoryNavigation) {
+            history = [stateCopy];
+            historyIndex = 0;
+        }
+
+    } catch (error) {
+        console.error("A critical error occurred during state restoration:", error);
+        alert(`Failed to restore the draft. An asset may have failed to load. Please check the console (F12) for details.`);
+        if (layer) layer.destroy();
+        layer = new Konva.Layer();
+        stage.add(layer);
+        stage.draw();
+    }
+}
+
+
+// --- STANDARD STATE MANAGEMENT ---
+function saveState() {
+    const state = {
+        nodes: layer.toObject(),
+        counters: { blockCounter, textCounter, doodleCounter },
+        canvasBg: stage.container().style.backgroundColor,
+        galleryTitle: document.getElementById('gallery-title').value
+    };
+    
+    const historyState = JSON.parse(JSON.stringify(state));
+    if (historyIndex > -1 && JSON.stringify(history[historyIndex]) === JSON.stringify(historyState)) return;
+    
+    history = history.slice(0, historyIndex + 1);
+    history.push(historyState);
+    historyIndex++;
+    
+    localStorage.setItem('galleryBuilderDraft', JSON.stringify(state));
+}
+
+function undo() {
+    if (historyIndex <= 0) return;
+    historyIndex--;
+    const state = JSON.parse(JSON.stringify(history[historyIndex]));
+    restoreState(state, true);
+}
+
+
+// --- All other functions ---
+function addNodeWithEvents(node) {
+    node.on('dragend', saveState);
+    node.on('transformend', saveState);
+    layer.add(node);
+    selectNode(node);
+    saveState();
+}
+
+/**
+ * FINALIZED: Creates a block with both a background color and an icon.
+ * Both are created in a way that is compatible with our save/restore logic.
+ */
+function addBlock() {
+    blockCounter++;
+    const group = new Konva.Group({
+        x: 60,
+        y: 60,
+        draggable: true,
+        name: 'block'
+    });
+
+    const blockWidth = 150;
+    const blockHeight = 150;
+
+    // 1. Add the background rectangle for the color
+    const backgroundRect = new Konva.Rect({
+        width: blockWidth,
+        height: blockHeight,
+        fill: '#F7931A', // The default yellow/orange color
+        name: 'blockBackground'
+    });
+    group.add(backgroundRect);
+
+    // 2. Add the icon image on top, using `src` for proper serialization
+    const iconImage = new Konva.Image({
+        name: 'baseImage',
+        src: DEFAULT_BLOCK_SRC,
+        width: blockWidth,
+        height: blockHeight,
+    });
+    group.add(iconImage);
+    
+    // 3. Set userData as before
+    group.setAttr('userData', { 
+        type: 'block', 
+        id: `block-${blockCounter}`, 
+        title: `Block ${blockCounter}`, 
+        description: '', 
+        contents: [], 
+        decoration: { overlay: { src: null, opacity: 1, scale: 1, cornerRadius: 0 } } 
+    });
+    
+    // 4. Add the complete group to the stage
+    addNodeWithEvents(group);
+}
+
+function addText() { textCounter++; const textNode = new Konva.Text({ x: 80, y: 80, text: 'New Text', fontSize: 48, fill: '#000000', draggable: true, name: 'text' }); textNode.setAttr('userData', { type: 'text', id: `text-${textCounter}` }); addNodeWithEvents(textNode); }
+function toggleDoodleMode() { isDoodling = !isDoodling; const doodleBtn = document.getElementById('doodle-btn'); doodleBtn.classList.toggle('btn-success'); doodleBtn.textContent = isDoodling ? '✔️ Stop Doodling' : '✏️ Doodle'; stage.container().style.cursor = isDoodling ? 'crosshair' : 'default'; stage.draggable(!isDoodling); }
+function selectNode(node) { selectedNode = node; const propertiesPanel = document.getElementById('properties-panel'); document.querySelectorAll('.prop-section').forEach(s => s.classList.remove('active')); if (node) { transformer.nodes([node]); const nodeType = node.name(); const propSection = document.getElementById(`prop-${nodeType}`); if(propSection) propSection.classList.add('active'); document.getElementById('prop-panel-title').textContent = `${nodeType.charAt(0).toUpperCase() + nodeType.slice(1)} Properties`; updatePropertiesPanel(); propertiesPanel.classList.remove('disabled'); } else { transformer.nodes([]); propertiesPanel.classList.add('disabled'); } layer.draw(); }
+function updatePropertiesPanel() { if (!selectedNode) return; const nodeType = selectedNode.name(); if (nodeType === 'block') { const data = selectedNode.getAttr('userData'); document.getElementById('prop-title').value = data.title; document.getElementById('prop-desc').value = data.description; document.getElementById('deco-image-url').value = data.decoration.overlay.src || ''; const deco = data.decoration; document.getElementById('deco-opacity-slider').value = deco.overlay.opacity; document.getElementById('deco-opacity-val').textContent = `${Math.round(deco.overlay.opacity * 100)}%`; document.getElementById('deco-scale-slider').value = deco.overlay.scale; document.getElementById('deco-scale-val').textContent = `${Math.round(deco.overlay.scale * 100)}%`; document.getElementById('deco-corners-slider').value = deco.overlay.cornerRadius; document.getElementById('deco-corners-val').textContent = `${deco.overlay.cornerRadius}px`; renderContentList(); } else if (nodeType === 'text') { document.getElementById('text-content').value = selectedNode.text(); document.getElementById('text-size').value = selectedNode.fontSize(); const color = selectedNode.fill(); document.getElementById('text-color').value = color; document.getElementById('text-color-hex').value = color; } }
+function saveDecorationProperties() { if (!selectedNode || selectedNode.name() !== 'block') return; const data = selectedNode.getAttr('userData'); const newOpacity = parseFloat(document.getElementById('deco-opacity-slider').value); const newScale = parseFloat(document.getElementById('deco-scale-slider').value); const newCorners = parseInt(document.getElementById('deco-corners-slider').value, 10); data.decoration.overlay.opacity = newOpacity; data.decoration.overlay.scale = newScale; data.decoration.overlay.cornerRadius = newCorners; document.getElementById('deco-opacity-val').textContent = `${Math.round(newOpacity * 100)}%`; document.getElementById('deco-scale-val').textContent = `${Math.round(newScale * 100)}%`; document.getElementById('deco-corners-val').textContent = `${newCorners}px`; renderDecorations(selectedNode); }
+function saveBlockTextProperties() { if (!selectedNode || selectedNode.name() !== 'block') return; const data = selectedNode.getAttr('userData'); data.title = document.getElementById('prop-title').value; data.description = document.getElementById('prop-desc').value; }
+function saveNodeProperties() { if (!selectedNode) return; const nodeType = selectedNode.name(); if (nodeType === 'block') { saveBlockTextProperties(); saveDecorationProperties(); } else if (nodeType === 'text') { selectedNode.text(document.getElementById('text-content').value); selectedNode.fontSize(parseInt(document.getElementById('text-size').value, 10)); selectedNode.fill(document.getElementById('text-color').value); layer.batchDraw(); } }
+function applyOverlayProperties(node, overlayImageNode, props) { if (!node || !overlayImageNode) return; const baseImg = node.findOne('.baseImage'); if (!baseImg) return; const baseRect = node.findOne('.blockBackground'); const baseSize = baseRect ? baseRect.width() : (baseImg ? baseImg.width() : 150); overlayImageNode.width(baseSize); overlayImageNode.height(baseSize); overlayImageNode.opacity(props.opacity); overlayImageNode.scale({ x: props.scale, y: props.scale }); overlayImageNode.cornerRadius(props.cornerRadius); overlayImageNode.offset({ x: overlayImageNode.width() / 2, y: overlayImageNode.height() / 2 }); overlayImageNode.position({ x: baseSize / 2, y: baseSize / 2 }); }
+function addContentItem(type) { if (!selectedNode || selectedNode.name() !== 'block') return; const data = selectedNode.getAttr('userData'); let newItem; if (type === 'link') { newItem = { type: 'link', value: { text: 'My Awesome Link', url: 'https://', newWindow: true } }; } else { newItem = { type: type, value: '' }; } data.contents.push(newItem); renderContentList(); saveState(); }
+function removeContentItem(index) { if (!selectedNode || selectedNode.name() !== 'block') return; const data = selectedNode.getAttr('userData'); data.contents.splice(index, 1); renderContentList(); saveState(); }
+function updateContentItem(index, field, fieldValue) { if (!selectedNode || selectedNode.name() !== 'block') return; const data = selectedNode.getAttr('userData'); const item = data.contents[index]; if (item.type === 'link') { item.value[field] = fieldValue; } else { item.value = fieldValue; } }
+function renderContentList() { if (!selectedNode || selectedNode.name() !== 'block') return; const listDiv = document.getElementById('content-list'); listDiv.innerHTML = ''; const contents = selectedNode.getAttr('userData').contents; contents.forEach((item, index) => { const itemDiv = document.createElement('div'); itemDiv.style.cssText = 'margin-bottom: 15px; padding: 10px; border: 1px solid var(--border-color); border-radius: 6px;'; const typeName = { image: 'Image', video: 'Video', text: 'Text', youtube: 'YouTube', x: 'X (Twitter)', link: 'Link' }[item.type]; let contentInputHTML = ''; switch (item.type) { case 'image': case 'video': contentInputHTML = `<div class="input-group"><input type="text" value="${item.value}" placeholder="URL or upload" onchange="updateContentItem(${index}, null, this.value); saveState()"><button class="btn btn-secondary" onclick="uploadContentAsset(${index}, '${item.type}')">Upload</button></div>`; break; case 'link': contentInputHTML = `<div class="form-group"><label>Display Text</label><input type="text" value="${item.value.text}" onchange="updateContentItem(${index}, 'text', this.value); saveState()"></div><div class="form-group"><label>URL</label><input type="text" value="${item.value.url}" onchange="updateContentItem(${index}, 'url', this.value); saveState()"></div><div class="form-group checkbox-group"><input type="checkbox" id="new-window-${index}" ${item.value.newWindow ? 'checked' : ''} onchange="updateContentItem(${index}, 'newWindow', this.checked); saveState()"><label for="new-window-${index}">Open in new window</label></div>`; break; default: contentInputHTML = `<textarea rows="2" onchange="updateContentItem(${index}, null, this.value); saveState()">${item.value}</textarea>`; } itemDiv.innerHTML = `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;"><strong>${typeName}</strong><button class="btn btn-danger btn-small" onclick="removeContentItem(${index})" style="padding: 2px 8px; font-size: 14px;">X</button></div>${contentInputHTML}`; listDiv.appendChild(itemDiv); }); }
+function uploadContentAsset(index, assetType) { const fileInput = document.createElement('input'); fileInput.type = 'file'; fileInput.accept = `${assetType}/*`; fileInput.onchange = e => { if (!e.target.files[0]) return; const reader = new FileReader(); reader.onload = event => { const dataURL = event.target.result; updateContentItem(index, null, dataURL); renderContentList(); saveState(); }; reader.readAsDataURL(e.target.files[0]); }; fileInput.click(); }
+function renderDecorations(blockNode, preloadedDecoImage = null) { if (!blockNode || blockNode.name() !== 'block') return; const data = blockNode.getAttr('userData'); let overlayNode = blockNode.findOne('.decoImage'); const handleImageLoad = (img) => { if (!overlayNode) { overlayNode = new Konva.Image({ image: img, name: 'decoImage', listening: false }); blockNode.add(overlayNode); } else { overlayNode.image(img); } applyOverlayProperties(blockNode, overlayNode, data.decoration.overlay); layer.batchDraw(); }; if (preloadedDecoImage) { handleImageLoad(preloadedDecoImage); } else if (data.decoration.overlay.src) { let img = new Image(); img.crossOrigin = 'Anonymous'; img.onload = () => handleImageLoad(img); img.onerror = () => { if (selectedNode === blockNode) { alert('Failed to load overlay image from URL.'); data.decoration.overlay.src = ''; document.getElementById('deco-image-url').value = ''; }}; img.src = data.decoration.overlay.src; } else if (overlayNode) { overlayNode.destroy(); layer.draw(); } }
+function previewNode() { if (!selectedNode || selectedNode.name() !== 'block') return; const data = selectedNode.getAttr('userData'); const contentStyle = `max-width:100%;border-radius:8px;margin-top:15px;`; const textContentStyle = `white-space:pre-wrap;margin-top:15px;padding:10px;border:1px solid #444;border-radius:4px;`; const iframeStyle = `width:100%;aspect-ratio:16/9;border:none;border-radius:8px;margin-top:15px;`; const linkStyle = `display:block;padding:15px;margin-top:15px;border:1px solid #555;border-radius:8px;background:#3a3a3a;color:#f5f5f5;text-decoration:none;text-align:center;transition:background-color 0.2s;`; const linkHoverStyle = `this.style.backgroundColor='#F7931A'`; const linkMouseOutStyle = `this.style.backgroundColor='#3a3a3a'`; const contentHTML = `<h2>${data.title}</h2><p>${data.description}</p><hr style="border-color: #444; margin-top:15px">` + data.contents.map(item => { switch (item.type) { case 'image': return `<img src="${item.value}" style="${contentStyle}">`; case 'video': return `<video src="${item.value}" controls style="${contentStyle}"></video>`; case 'text': return `<p style="${textContentStyle}">${item.value}</p>`; case 'youtube': { const videoId = item.value.split('v=')[1]?.split('&')[0] || item.value.split('/').pop(); return `<iframe style="${iframeStyle}" src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe>`; } case 'x': { const postId = item.value.split('status/')[1]; return `<blockquote class="twitter-tweet" data-theme="dark"><a href="https://twitter.com/x/status/${postId}"></a></blockquote>`; } case 'link': { const target = item.value.newWindow ? 'target="_blank" rel="noopener noreferrer"' : ''; return `<a href="${item.value.url}" ${target} style="${linkStyle}" onmouseover="${linkHoverStyle}" onmouseout="${linkMouseOutStyle}">${item.value.text}</a>`; } default: return ''; } }).join(''); showModal(contentHTML); }
+function showModal(content) { document.getElementById('modal-body').innerHTML = content; document.getElementById('preview-modal').classList.add('active'); if (window.twttr) window.twttr.widgets.load(document.getElementById('modal-body')); }
+function hideModal() { document.getElementById('preview-modal').classList.remove('active'); }
+
+async function loadFromLocalStorage() {
+    const savedDraft = localStorage.getItem('galleryBuilderDraft');
+    if (savedDraft) {
+        if (confirm('A saved draft was found in your browser. Do you want to load it?')) {
+            try {
+                const state = JSON.parse(savedDraft);
+                await restoreState(state);
+            } catch (e) {
+                console.error("Failed to parse or restore saved draft:", e);
+                alert("The saved draft is corrupted and could not be loaded. Starting fresh.");
+                localStorage.removeItem('galleryBuilderDraft');
+                saveState();
+            }
+        } else {
+            saveState(); 
+        }
+    } else {
+        saveState();
+    }
+}
+function exportDraft() {
+    saveState();
+    const blob = new Blob([localStorage.getItem('galleryBuilderDraft')], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = "gallery-draft.json";
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
+function importDraft() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json,application/json';
+    input.onchange = async e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async function(event) {
+            try {
+                const state = JSON.parse(event.target.result);
+                if (confirm('Importing this draft will replace your current canvas. Are you sure?')) {
+                    await restoreState(state);
+                    saveState();
+                }
+            } catch (err) {
+                alert('Error: The selected file is not a valid JSON draft.');
+                console.error("Failed to import draft:", err);
+            }
+        };
+        reader.readAsText(file);
+    };
+    input.click();
+}
+
+async function exportToZIP() {
+    const exportBtn = document.getElementById('export-btn');
+    exportBtn.disabled = true; exportBtn.textContent = '⚙️ Preparing...';
+    
+    const originalStagePos = stage.position();
+    const originalStageScale = stage.scaleX();
+    selectNode(null);
+    stage.position({ x: 0, y: 0 });
+    stage.scale({ x: 1, y: 1 });
+    layer.draw();
+
+    const zip = new JSZip();
+    const assetsFolder = zip.folder("assets");
+    let assetCounter = 0;
+    const assetMap = new Map();
+    const dataURLToBlob = (dataurl) => { const arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1]; const bstr = atob(arr[1]); let n = bstr.length; const u8arr = new Uint8Array(n); while(n--){ u8arr[n] = bstr.charCodeAt(n); } return new Blob([u8arr], {type:mime}); };
+    const addAsset = async (src) => { if (!src) return null; if (assetMap.has(src)) return assetMap.get(src); if (src.startsWith('data:')) { const mime = src.split(',')[0].split('/')[1].split(';')[0]; const extension = mime.includes('svg') ? 'svg' : (mime.split('/')[1] || mime); const filename = `asset-${assetCounter++}.${extension}`; const blob = dataURLToBlob(src); assetsFolder.file(filename, blob); const path = `assets/${filename}`; assetMap.set(src, path); return path; } return src; };
+    
+    const nodesToProcess = layer.children.filter(node => node !== transformer);
+    const itemDataPromises = nodesToProcess.map(node => {
+        return new Promise(async (resolve) => {
+            const rect = node.getClientRect({ skipTransform: false });
+            
+            const clone = node.clone();
+            const dataURL = clone.toDataURL({ pixelRatio: 2 });
+            clone.destroy();
+            
+            const itemData = {
+                x: rect.x,
+                y: rect.y,
+                width: rect.width,
+                height: rect.height,
+                imageSrc: await addAsset(dataURL),
+                modalContent: null
+            };
+
+            if (node.name() === 'block') {
+                const data = node.getAttr('userData');
+                const contentPromises = data.contents.map(async item => {
+                    let value = item.value;
+                    if ((item.type === 'image' || item.type === 'video') && value.startsWith('data:')) {
+                        value = await addAsset(value);
+                    }
+                    switch(item.type) {
+                        case 'image': return `<img src="${value}" style="max-width:100%;border-radius:8px;margin-top:15px;">`;
+                        case 'video': return `<video src="${value}" controls style="max-width:100%;border-radius:8px;margin-top:15px;"></video>`;
+                        case 'text': return `<p style="white-space:pre-wrap;margin-top:15px;padding:10px;border:1px solid #444;border-radius:4px;">${value}</p>`;
+                        case 'youtube': { const videoId = value.split('v=')[1]?.split('&')[0] || value.split('/').pop(); return `<iframe style="width:100%;aspect-ratio:16/9;border:none;border-radius:8px;margin-top:15px;" src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe>`; }
+                        case 'x': { const postId = value.split('status/')[1]; return `<blockquote class="twitter-tweet" data-theme="dark"><a href="https://twitter.com/x/status/${postId}"></a></blockquote>`; }
+                        case 'link': { const target = item.value.newWindow ? 'target="_blank" rel="noopener noreferrer"' : ''; return `<a href="${item.value.url}" class="exported-link" ${target}>${item.value.text}</a>`; }
+                        default: return '';
+                    }
+                });
+                const resolvedContents = await Promise.all(contentPromises);
+                itemData.modalContent = `<h2>${data.title}</h2><p>${data.description}</p><hr style="border-color: #444; margin-top:15px">${resolvedContents.join('')}`.replace(/'/g, "\\'").replace(/\n/g, '\\n');
+            }
+            resolve(itemData);
+        });
+    });
+
+    const galleryItemsData = await Promise.all(itemDataPromises);
+    stage.position(originalStagePos);
+    stage.scale({ x: originalStageScale, y: originalStageScale });
+    layer.draw();
+    const pageTitle = document.getElementById('gallery-title').value;
+    const canvasBgColor = stage.container().style.backgroundColor || '#faf9f6';
+    const finalHTML = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>${pageTitle}</title><link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCBmaWxsPSIjMkMyQzJDIiB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjE1Ii8+PHJlY3QgZmlsbD0iI0Y3OTMxQSIgeD0iMjAiIHk9IjIwIiB3aWR0aD0iMjUiIGhlaWdodD0iMjUiIHJ4PSI1Ii8+PHJlY3QgZmlsbD0iI0Y3OTMxQSIgeD0iNTUiIHk9IjIwIiB3aWR0aD0iMjUiIGhlaWdodD0iMjUiIHJ4PSI1Ii8+PHJlY3QgZmlsbD0iI0Y3OTMxQSIgeD0iMjAiIHk9IjU1IiB3aWR0aD0iMjUiIGhlaWdodD0iMjUiIHJ4PSI1Ii8+PHJlY3QgZmlsbD0iI0Y3OTMxQSIgeD0iNTUiIHk9IjU1IiB3aWR0aD0iMjUiIGhlaWdodD0iMjUiIHJ4PSI1Ii8+PC9zdmc+"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500&display=swap" rel="stylesheet"><style>body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; background: #212121; color: #e0e0e0; display: flex; flex-direction: column; align-items: center; padding: 40px; min-height: 100vh; overflow-x: hidden; } h1 { font-family: 'Playfair Display', serif; font-size: 3em; font-weight: 700; color: #f7931a; margin-bottom: 10px; } p.export-info { color: #aaa; margin-bottom: 20px; font-weight: 500; } #gallery-wrapper { width: ${CANVAS_SIZE}px; height: ${CANVAS_SIZE}px; overflow: hidden; background: ${canvasBgColor}; border-radius: 8px; border: 1px solid #444; box-shadow: 0 15px 50px rgba(0,0,0,0.6); position: relative; } #gallery-container { position: relative; width: 100%; height: 100%; cursor: grab; } #gallery-container img { position: absolute; transform-origin: top left; transition: transform 0.3s ease, box-shadow 0.3s ease; } #gallery-container img[style*="cursor: pointer"]:hover { transform: scale(1.05); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3); z-index: 10; } .modal-overlay { display: flex; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: opacity 0.4s ease, visibility 0s 0.4s; } .modal-overlay.active { opacity: 1; visibility: visible; transition: opacity 0.4s ease; } .modal-content { background: #2c2c2c; padding: 0; border-radius: 8px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; position: relative; display: flex; transform: scale(0.95); transition: transform 0.4s ease; } .modal-overlay.active .modal-content { transform: scale(1); } button.close-btn { position: absolute; top: 10px; right: 10px; font-size: 30px; color: #aaa; cursor: pointer; background: none; border: none; z-index: 10; padding: 5px; line-height: 1; } button.close-btn:hover { color: #fff; } .modal-main-content { padding: 30px 40px; width: 100%; } .modal-nav { display: flex; align-items: center; justify-content: center; } .modal-nav button { background: none; border: none; color: #888; font-size: 48px; cursor: pointer; padding: 0 20px; transition: color 0.2s; } .modal-nav button:hover { color: #fff; } .view-controls { position: absolute; bottom: 15px; right: 15px; z-index: 20; display: flex; gap: 5px; } .view-controls button { background: rgba(44, 44, 44, 0.9); color: #f5f5f5; border: 1px solid #555; border-radius: 4px; width: 30px; height: 30px; font-size: 20px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background-color 0.2s, color 0.2s; } .view-controls button:hover { background: #f7931a; color: #1a1a1a; } .exported-link { display: block; padding: 15px; margin-top: 15px; border: 1px solid #555; border-radius: 8px; background: #3a3a3a; color: #f5f5f5; text-decoration: none; text-align: center; font-weight: 500; transition: background-color 0.2s, color 0.2s; } .exported-link:hover { background-color: #f7931a; color: #1a1a1a; } </style></head><body><h1>${pageTitle}</h1><p class="export-info">Click an item to view details, scroll to zoom, drag to pan, double-click background to reset.</p><div id="gallery-wrapper"><div id="gallery-container"></div><div class="view-controls"><button id="zoom-in" title="Zoom In">+</button><button id="zoom-out" title="Zoom Out">−</button><button id="zoom-reset" title="Reset View">⛶</button></div></div><div class="modal-overlay" id="modal-overlay"><div class="modal-content"><button class="close-btn" onclick="hideModal()" title="Close">×</button><div id="modal-body"></div></div></div><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"><\/script><script>
+    const galleryItems = ${JSON.stringify(galleryItemsData, null, 2)};
+    window.addEventListener('load', () => {
+        const container = document.getElementById('gallery-container');
+        galleryItems.forEach((item, index) => {
+            const img = document.createElement('img');
+            img.src = item.imageSrc;
+            img.loading = 'lazy';
+            const titleMatch = item.modalContent ? item.modalContent.match(/<h2>(.*?)<\\/h2>/) : null;
+            img.alt = titleMatch ? titleMatch[1].replace(/<[^>]*>/g, '') : \`Gallery Item \${index + 1}\`;
+            img.style.cssText = \`position: absolute; left: \${item.x}px; top: \${item.y}px; width: \${item.width}px; height: \${item.height}px;\`;
+            if (item.modalContent) {
+                img.style.cursor = 'pointer';
+                img.onclick = () => showModal(index);
+            }
+            container.appendChild(img);
+        });
+        const zoomFactor = 1.2;
+        document.getElementById('zoom-in').onclick = () => { scale *= zoomFactor; setTransform(); };
+        document.getElementById('zoom-out').onclick = () => { scale /= zoomFactor; if (scale < 1) scale = 1; setTransform(); };
+        document.getElementById('zoom-reset').onclick = () => { scale = 1; pX = 0; pY = 0; setTransform(); };
+    });
+    function showModal(currentIndex) {
+        const interactiveItems = galleryItems.map((item, index) => ({...item, originalIndex: index})).filter(item => item.modalContent);
+        if (interactiveItems.length === 0) return;
+        const currentItemInFiltered = interactiveItems.find(item => item.originalIndex === currentIndex);
+        if (!currentItemInFiltered) return;
+        const currentFilteredIndex = interactiveItems.indexOf(currentItemInFiltered);
+        const modal = document.getElementById('modal-overlay');
+        const modalBody = modal.querySelector('#modal-body');
+        const prevFilteredIndex = (currentFilteredIndex - 1 + interactiveItems.length) % interactiveItems.length;
+        const nextFilteredIndex = (currentFilteredIndex + 1) % interactiveItems.length;
+        const prevItemIndex = interactiveItems[prevFilteredIndex].originalIndex;
+        const nextItemIndex = interactiveItems[nextFilteredIndex].originalIndex;
+        const contentHTML = galleryItems[currentIndex].modalContent.replace(/\\\\'/g, "'").replace(/\\\\n/g, '\\n');
+        modalBody.innerHTML = \`<div class="modal-nav"><button id="prev-item" title="Previous Item">‹</button></div><div class="modal-main-content">\${contentHTML}</div><div class="modal-nav"><button id="next-item" title="Next Item">›</button></div>\`;
+        modal.classList.add('active');
+        document.getElementById('prev-item').onclick = () => showModal(prevItemIndex);
+        document.getElementById('next-item').onclick = () => showModal(nextItemIndex);
+        if(window.twttr) { window.twttr.widgets.load(modalBody); }
+    }
+    function hideModal() { document.getElementById('modal-overlay').classList.remove('active'); }
+    const cont=document.getElementById('gallery-container');let scale=1,panning=!1,pX=0,pY=0,start={x:0,y:0};function setTransform(){cont.style.transform=\`translate(\${pX}px, \${pY}px) scale(\${scale})\`}cont.onmousedown=function(e){if(e.target!==cont)return;e.preventDefault();panning=!0;start={x:e.clientX-pX,y:e.clientY-pY};cont.style.cursor='grabbing'};cont.onmouseup=function(){panning=!1;cont.style.cursor='grab'};cont.onmouseleave=function(){panning=!1;cont.style.cursor='grab'};cont.onmousemove=function(e){if(!panning)return;e.preventDefault();pX=e.clientX-start.x;pY=e.clientY-start.y;setTransform()};cont.onwheel=function(e){e.preventDefault();const rect=cont.getBoundingClientRect(),xs=(e.clientX-rect.left-pX)/scale,ys=(e.clientY-rect.top-pY)/scale,delta=e.wheelDelta?e.wheelDelta:-e.deltaY;let newScale=scale;delta>0?(newScale*=1.1):(newScale/=1.1);if(newScale<1)newScale=1;scale=newScale;pX=e.clientX-rect.left-xs*scale;pY=e.clientY-rect.top-ys*scale;setTransform()};cont.ondblclick=function(e){if(e.target!==cont)return;scale=1;pX=0;pY=0;setTransform()};
+    <\/script></body></html>`;
+
+    zip.file("index.html", finalHTML);
+    exportBtn.textContent = '🔗 Zipping...';
+    zip.generateAsync({type:"blob"}).then(content => { const a = document.createElement('a'); a.href = URL.createObjectURL(content); a.download = `${pageTitle.replace(/\s/g, '_') || 'gallery'}-export.zip`; a.click(); URL.revokeObjectURL(a.href); exportBtn.disabled = false; exportBtn.textContent = '📁 Export as .zip'; });
+}
+
+
+function initEventListeners() {
+    const deleteNode = () => { if (!selectedNode) return; const nodeToDestroy = selectedNode; selectNode(null); nodeToDestroy.destroy(); layer.draw(); saveState(); };
+    document.getElementById('delete-btn').addEventListener('click', deleteNode);
+    window.addEventListener('keydown', e => { if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return; if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deleteNode(); } if (e.key === 'Escape') { selectNode(null); hideModal(); if(isDoodling) toggleDoodleMode(); } if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo(); } });
+    document.getElementById('add-block-btn').addEventListener('click', addBlock);
+    document.getElementById('add-text-btn').addEventListener('click', addText);
+    document.getElementById('doodle-btn').addEventListener('click', toggleDoodleMode);
+    document.getElementById('export-btn').addEventListener('click', exportToZIP);
+    document.getElementById('clear-btn').addEventListener('click', () => { if (confirm('Are you sure you want to clear the entire canvas? This cannot be undone.')) { if(layer) layer.destroy(); layer = new Konva.Layer(); stage.add(layer); if(transformer) transformer.destroy(); transformer = new Konva.Transformer(); layer.add(transformer); stage.draw(); history = []; historyIndex = -1; localStorage.removeItem('galleryBuilderDraft'); saveState(); } });
+    document.getElementById('modal-close-btn').addEventListener('click', hideModal);
+    document.getElementById('preview-modal').addEventListener('click', e => { if(e.target.id === 'preview-modal') hideModal(); });
+    
+    // Event listeners for controls
+    const canvasBgColor = document.getElementById('canvas-bg-color');
+    const canvasBgHex = document.getElementById('canvas-bg-hex');
+    const textColor = document.getElementById('text-color');
+    const textColorHex = document.getElementById('text-color-hex');
+
+    canvasBgColor.addEventListener('change', () => saveState());
+    canvasBgHex.addEventListener('change', () => saveState());
+    canvasBgColor.addEventListener('input', (e) => { canvasBgHex.value = e.target.value; stage.container().style.backgroundColor = e.target.value; });
+    canvasBgHex.addEventListener('input', (e) => { if (/^#([0-9A-F]{3}){1,2}$/i.test(e.target.value)) { canvasBgColor.value = e.target.value; stage.container().style.backgroundColor = e.target.value; } });
+    document.getElementById('canvas-bg-transparent').addEventListener('click', () => { stage.container().style.backgroundColor = 'transparent'; canvasBgHex.value = 'transparent'; saveState(); });
+    
+    textColor.addEventListener('input', (e) => { textColorHex.value = e.target.value; saveNodeProperties(); });
+    textColorHex.addEventListener('input', (e) => { if (/^#([0-9A-F]{3}){1,2}$/i.test(e.target.value)) { textColor.value = e.target.value; saveNodeProperties(); } });
+    textColor.addEventListener('change', () => saveState());
+    textColorHex.addEventListener('change', () => saveState());
+
+    document.getElementById('export-draft-btn').addEventListener('click', exportDraft);
+    document.getElementById('import-draft-btn').addEventListener('click', importDraft);
+    document.getElementById('save-cache-btn').addEventListener('click', () => {
+        saveState();
+        alert('Your current work has been saved to the browser cache!');
+    });
+
+    document.getElementById('gallery-title').addEventListener('change', () => saveState());
+    
+    document.getElementById('deco-image-url').addEventListener('change', (e) => { if (selectedNode) { const data = selectedNode.getAttr('userData'); data.decoration.overlay.src = e.target.value; renderDecorations(selectedNode); saveState(); } });
+    document.getElementById('deco-image-upload').addEventListener('change', e => { if (!selectedNode || !e.target.files[0]) return; const reader = new FileReader(); reader.onload = event => { const data = selectedNode.getAttr('userData'); data.decoration.overlay.src = event.target.result; document.getElementById('deco-image-url').value = ''; renderDecorations(selectedNode); saveState(); }; reader.readAsDataURL(e.target.files[0]); });
+    
+    document.getElementById('deco-opacity-slider').addEventListener('input', () => saveDecorationProperties());
+    document.getElementById('deco-scale-slider').addEventListener('input', () => saveDecorationProperties());
+    document.getElementById('deco-corners-slider').addEventListener('input', () => saveDecorationProperties());
+    document.getElementById('deco-opacity-slider').addEventListener('change', saveState);
+    document.getElementById('deco-scale-slider').addEventListener('change', saveState);
+    document.getElementById('deco-corners-slider').addEventListener('change', saveState);
+
+    document.getElementById('prop-title').addEventListener('change', () => { saveBlockTextProperties(); saveState(); });
+    document.getElementById('prop-desc').addEventListener('change', () => { saveBlockTextProperties(); saveState(); });
+    document.getElementById('text-content').addEventListener('change', () => { saveNodeProperties(); saveState(); });
+    document.getElementById('text-size').addEventListener('change', () => { saveNodeProperties(); saveState(); });
+    
+    // Stage event listeners
+    stage.on('click tap', e => { if (isDoodling) return; if (e.target === stage) { selectNode(null); } else { selectNode(e.target.name() === 'baseImage' || e.target.name() === 'decoImage' || e.target.name() === 'blockBackground' ? e.target.getParent() : e.target); }});
+    stage.on('dblclick dbltap', e => { if (e.target.name() === 'block' || e.target.getParent()?.name() === 'block') { previewNode(); } else if (e.target === stage) { stage.position({ x: 0, y: 0 }); stage.scale({ x: 1, y: 1 }); stage.batchDraw(); } });
+    stage.on('wheel', (e) => { e.evt.preventDefault(); if (isDoodling) return; const oldScale = stage.scaleX(); const pointer = stage.getPointerPosition(); const mousePointTo = { x: (pointer.x - stage.x()) / oldScale, y: (pointer.y - stage.y()) / oldScale }; let newScale = e.evt.deltaY > 0 ? oldScale / 1.1 : oldScale * 1.1; if (e.evt.deltaY > 0 && newScale < 1) newScale = 1; stage.scale({ x: newScale, y: newScale }); const newPos = { x: pointer.x - mousePointTo.x * newScale, y: pointer.y - mousePointTo.y * newScale }; stage.position(newPos); stage.batchDraw(); });
+    stage.on('dragstart', () => { if(!selectedNode) stage.container().style.cursor = 'grabbing'; });
+    
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => { document.querySelectorAll('.tab-btn, .tab-content').forEach(el => el.classList.remove('active')); btn.classList.add('active'); document.getElementById(`tab-content-${btn.dataset.tab}`).classList.add('active'); }));
+    
+    stage.on('mousedown touchstart', (e) => { if (!isDoodling) return; doodleCounter++; const pos = stage.getPointerPosition(); currentDoodle = new Konva.Line({ points: [pos.x, pos.y], stroke: '#F7931A', strokeWidth: 5, tension: 0.5, lineCap: 'round', draggable: true, name: 'doodle' }); currentDoodle.on('dragend', saveState); currentDoodle.on('transformend', saveState); currentDoodle.setAttr('userData', {type: 'doodle', id: `doodle-${doodleCounter}`}); layer.add(currentDoodle); });
+    stage.on('mousemove touchmove', (e) => { if (!isDoodling || !currentDoodle) return; const pos = stage.getPointerPosition(); const newPoints = currentDoodle.points().concat([pos.x, pos.y]); currentDoodle.points(newPoints); });
+    stage.on('mouseup touchend', () => { if (!isDoodling || !currentDoodle) return; currentDoodle = null; saveState(); });
+}
+</script>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+</body>
+</html>
